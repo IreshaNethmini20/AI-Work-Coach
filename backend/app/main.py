@@ -1,16 +1,41 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from .ai_service import analyze_task_with_ai
+
+from .ai_service import (
+    GeminiConfigurationError,
+    GeminiOutputError,
+    GeminiProviderError,
+    analyze_task_with_ai,
+)
 from .schemas import AnalyzeTaskRequest, AnalysisResponse, FeedbackRequest, FeedbackResponse
 
-app = FastAPI(title="AI Work Coach API", description="Workplace AI coaching prototype API", version="0.2.0")
+app = FastAPI(title="AI Work Coach API", description="Workplace AI coaching prototype API", version="0.3.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+
+
 @app.get("/")
-async def root(): return {"status": "development", "message": "AI Work Coach API"}
+async def root():
+    return {"status": "development", "message": "AI Work Coach API"}
+
+
 @app.get("/health")
-async def health_check(): return {"status": "healthy"}
+async def health_check():
+    return {"status": "healthy"}
+
+
 @app.post("/api/analyze", response_model=AnalysisResponse)
-async def analyze_task(request: AnalyzeTaskRequest): return await analyze_task_with_ai(request.task)
+async def analyze_task(request: AnalyzeTaskRequest):
+    try:
+        return await analyze_task_with_ai(request.task)
+    except GeminiConfigurationError:
+        logging.getLogger(__name__).error("Gemini API key is not configured")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI coaching is not configured yet.")
+    except (GeminiProviderError, GeminiOutputError):
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="We couldn't build a coaching plan right now. Please try again.")
+
+
 @app.post("/api/feedback", response_model=FeedbackResponse)
 async def record_feedback(feedback: FeedbackRequest):
     # Prototype-only: feedback is validated but intentionally not stored.
