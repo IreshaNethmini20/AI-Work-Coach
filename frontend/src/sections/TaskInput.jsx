@@ -1,0 +1,36 @@
+import React, { useState } from 'react';
+
+import Icon from '../components/common/Icon';
+
+const examples = [
+  ['Analyse sales data', 'I need to analyse quarterly sales data and explain the important trends to my manager.'],
+  ['Draft a client email', 'I need to draft a clear client email about the next steps for their project.'],
+  ['Prepare a presentation', 'I need to prepare a presentation for our monthly team meeting.'],
+  ['Summarise a document', 'I need to summarise a long document and share the key points with my team.'],
+  ['Write a report', 'I need to write a project status report for stakeholders.'],
+];
+
+export default function TaskInput({ onAnalyze, loading, error }) {
+  const [task, setTask] = useState('');
+  const submit = () => task.trim() && onAnalyze(task.trim());
+
+  return (
+    <section className="composer" aria-labelledby="task-composer-title">
+      <div className="composer-heading">
+        <div>
+          <h2 id="task-composer-title">What are you working on?</h2>
+          <p>Use a real task — the more context you share, the more useful your coaching plan will be.</p>
+        </div>
+        <span className="secure-note"><Icon name="shield" size={15} /> Keep sensitive data out</span>
+      </div>
+      <label className="sr-only" htmlFor="task">Describe your workplace task</label>
+      <textarea id="task" value={task} maxLength={2000} onChange={(event) => setTask(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') submit(); }} placeholder="I need to prepare a weekly sales report and explain the key changes to my manager..." rows="5" />
+      <div className="composer-footer">
+        <span>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to analyse</span>
+        <button className="primary-button" onClick={submit} disabled={!task.trim() || loading}>{loading ? <><i className="spinner" /> Building your coaching plan...</> : <>Analyse task <Icon name="arrow" size={17} /></>}</button>
+      </div>
+      {error && <div className="inline-error" role="alert"><span>{error}</span><button onClick={submit} disabled={loading || !task.trim()}>Try again</button></div>}
+      <div className="examples"><span>Try an example</span><div>{examples.map(([label, value]) => <button key={label} className={task === value ? 'selected' : ''} onClick={() => setTask(value)}>{label}</button>)}</div></div>
+    </section>
+  );
+}

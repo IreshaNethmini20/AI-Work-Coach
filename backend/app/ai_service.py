@@ -51,14 +51,14 @@ class GeminiOutputError(Exception):
     """Raised when Gemini structured output fails application validation."""
 
 
-MAX_GEMINI_ATTEMPTS = 3
-RETRY_DELAYS_SECONDS = (1, 2)
-
-
-def is_retryable_provider_error(error: Exception) -> bool:
-    """Return true only for temporary provider responses safe to retry."""
-    status_code = getattr(error, "code", None) or getattr(error, "status_code", None)
-    return status_code in {429, 503}
+GEMINI_RETRY_OPTIONS = types.HttpRetryOptions(
+    attempts=3,
+    initial_delay=1.0,
+    max_delay=2.0,
+    exp_base=2.0,
+    jitter=0.2,
+    http_status_codes=[408, 429, 500, 502, 503, 504],
+)
 
 
 async def analyze_task_with_ai(task: str) -> AnalysisResponse:
@@ -68,53 +68,39 @@ async def analyze_task_with_ai(task: str) -> AnalysisResponse:
     if not api_key:
         raise GeminiConfigurationError("GEMINI_API_KEY is not configured.")
 
-    client = genai.Client(api_key=api_key)
-    response = None
-    last_error: Exception | None = None
-    for attempt in range(1, MAX_GEMINI_ATTEMPTS + 1):
-        try:
-            response = await asyncio.wait_for(
-                client.aio.models.generate_content(
-                    model=model,
-                    contents=f"Employee task:\n{task}",
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_INSTRUCTION,
-                        response_mime_type="application/json",
-                        response_schema=AnalysisResponse,
-                        temperature=0.2,
-                        # This product has no tools or function declarations.
-                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-                    ),
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(retry_options=GEMINI_RETRY_OPTIONS))
+    try:
+        # The SDK owns the single bounded retry policy; asyncio enforces the total request budget.
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=model,
+                contents=f"Employee task:\n{task}",
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    response_schema=AnalysisResponse,
+                    temperature=0.2,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 ),
-                timeout=45,
-            )
-            break
-        except TimeoutError as error:
-            last_error = error
-            retryable = True
-            error_name = "timeout"
-        except Exception as error:
-            last_error = error
-            retryable = is_retryable_provider_error(error)
-            error_name = type(error).__name__
+            ),
+            timeout=45,
+        )
+    except TimeoutError as error:
+        logger.warning("Gemini request exhausted its overall timeout")
+        raise GeminiProviderError("The AI provider could not complete the request.") from error
+    except Exception as error:
+        status_code = getattr(error, "code", None) or getattr(error, "status_code", None)
+        logger.error("Gemini request failed after SDK retry policy: status=%s category=%s", status_code or "unknown", type(error).__name__)
+        raise GeminiProviderError("The AI provider could not complete the request.") from error
 
-        if retryable and attempt < MAX_GEMINI_ATTEMPTS:
-            delay = RETRY_DELAYS_SECONDS[attempt - 1]
-            logger.warning("Gemini request retry %d/%d after %s; waiting %ds", attempt, MAX_GEMINI_ATTEMPTS, error_name, delay)
-            await asyncio.sleep(delay)
-            continue
-
-        logger.error("Gemini request failed after %d attempt(s): %s", attempt, error_name)
-        raise GeminiProviderError("The AI provider could not complete the request.") from last_error
-
-    if response is None or not response.text:
+    if not response.text:
         logger.error("Gemini returned an empty structured response")
         raise GeminiOutputError("The AI provider returned no structured output.")
 
     try:
         analysis = AnalysisResponse.model_validate_json(response.text)
     except ValidationError as error:
-        logger.error("Gemini output did not match AnalysisResponse: %s", error.errors())
+        logger.error("Gemini output did not match the AnalysisResponse schema: category=%s", type(error).__name__)
         raise GeminiOutputError("The AI provider returned an invalid coaching plan.") from error
 
     # The submitted task is authoritative; do not let generated content alter it.
