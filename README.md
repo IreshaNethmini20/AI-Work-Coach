@@ -54,26 +54,25 @@ Optional feedback
 ```
 
 ---
-
 ## Prototype Preview
 
-### 1. AI Work Coach
+### 1. Describe a Real Workplace Task
 
-The landing experience introduces the purpose of the product and the training-to-work problem it addresses.
+Employees start with a real task they need to complete. The coach provides example tasks, reminds users to keep sensitive information out, and sends the task to the backend for analysis.
 
-![AI Work Coach landing page](docs/evidence_1.png)
+![AI Work Coach task input](docs/evidence_1.png)
 
-### 2. Describe a Real Workplace Task
+### 2. Get a Task-Specific AI + Human Workflow
 
-Employees can enter a task they are currently working on and ask the coach to analyse how AI could appropriately support it.
+AI Work Coach evaluates where AI can help and generates a structured coaching plan. The plan explains the AI opportunity and breaks the work into practical steps that combine AI assistance with the employee's own expertise.
 
-![AI Work Coach task input](docs/evidence_2.png)
+![AI Work Coach recommended workflow](docs/evidence_2.png)
 
-### 3. Receive a Practical Coaching Plan
+### 3. Use AI Responsibly and Keep Human Judgement
 
-The application uses Gemini through the FastAPI backend to generate a structured coaching plan containing the AI opportunity, recommended workflow, ready-to-use prompt, skill guidance, expected benefit, and human-review guidance.
+The coaching plan provides a ready-to-use prompt, identifies the AI skill being practised, explains the potential benefit, and clearly highlights what the employee must verify or decide themselves. Employees can also provide optional feedback on whether the workflow was useful.
 
-![AI Work Coach coaching result](docs/evidence_3.png)
+![AI Work Coach prompt and human review guidance](docs/evidence_3.png)
 
 ---
 
