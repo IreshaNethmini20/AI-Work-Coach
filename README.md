@@ -1,79 +1,291 @@
 # AI Work Coach
 
+AI Work Coach helps employees turn real workplace tasks into practical, responsible AI-assisted workflows.
+
+Instead of simply completing the employee's task, the application coaches them on **where AI can help, how to work with AI, what prompt to use, and what still requires human judgement**.
+
+---
+
 ## Problem
 
 AI training does not automatically translate into day-to-day AI use.
 
+Employees may understand AI concepts after training but still struggle with a practical question:
+
+> **"How should I use AI for the actual task I need to do today?"**
+
+AI Work Coach is designed to bridge that gap between **AI training and real workplace application**.
+
+---
+
 ## Solution
 
-Employees enter a real workplace task and receive responsible, practical AI coaching.
+An employee describes a real workplace task.
 
-## How it works
+AI Work Coach then provides:
 
-`Task → AI opportunity → AI + human workflow → ready-to-use prompt → human verification → skill practice → optional feedback`
+- an **AI opportunity level** with an explanation;
+- a practical **AI + human workflow**;
+- a **ready-to-use prompt** for an approved AI assistant;
+- the **AI skill being practised**;
+- the potential benefit of using AI; and
+- clear **human-review guidance** showing what the employee must verify or decide.
+
+The goal is not to replace the employee. It is to help them learn how to use AI effectively and responsibly while completing real work.
+
+---
+
+## How It Works
+
+```text
+Real workplace task
+        ↓
+Identify the AI opportunity
+        ↓
+Create an AI + human workflow
+        ↓
+Generate a ready-to-use prompt
+        ↓
+Keep human judgement and verification
+        ↓
+Identify the AI skill being practised
+        ↓
+Optional feedback
+```
+
+---
+
+## Prototype Preview
+
+### 1. AI Work Coach
+
+The landing experience introduces the purpose of the product and the training-to-work problem it addresses.
+
+![AI Work Coach landing page](docs/evidence_1.png)
+
+### 2. Describe a Real Workplace Task
+
+Employees can enter a task they are currently working on and ask the coach to analyse how AI could appropriately support it.
+
+![AI Work Coach task input](docs/evidence_2.png)
+
+### 3. Receive a Practical Coaching Plan
+
+The application uses Gemini through the FastAPI backend to generate a structured coaching plan containing the AI opportunity, recommended workflow, ready-to-use prompt, skill guidance, expected benefit, and human-review guidance.
+
+![AI Work Coach coaching result](docs/evidence_3.png)
+
+---
 
 ## Features
 
-- Task-specific coaching plans from Gemini, validated against a Pydantic response contract.
-- A ready-to-use prompt, practical workflow, expected benefit, and visible human-review guidance.
-- Clear privacy reminders and safe guidance for consequential decisions.
-- Optional prototype feedback; it is validated but not persistently stored.
+- **Task-specific AI coaching** generated using Gemini.
+- **AI opportunity assessment** explaining where AI can realistically help.
+- **AI + human workflow** rather than simply asking AI to complete the task.
+- **Ready-to-use prompt** that employees can take to an approved AI assistant.
+- **Human-review guidance** showing what must still be verified or decided by a person.
+- **AI skill identification** to connect real work with skill development.
+- **Responsible-AI guidance** for sensitive and consequential workplace tasks.
+- **Optional feedback** for evaluating the prototype experience.
+- Structured Gemini responses validated using **Pydantic**.
+
+---
 
 ## Architecture
 
-`React/Vite → FastAPI → Gemini → Pydantic structured validation`
+```text
+React / Vite Frontend
+        ↓
+POST /api/analyze
+        ↓
+FastAPI Backend
+        ↓
+Google Gemini
+        ↓
+Pydantic Structured Validation
+        ↓
+Coaching Plan
+```
 
-The frontend calls `POST /api/analyze`. The backend validates the request, calls Gemini for JSON matching `AnalysisResponse`, validates it again, and returns the plan. `POST /api/feedback` acknowledges validated feedback without storing it.
+The frontend sends the employee's task to `POST /api/analyze`.
+
+The FastAPI backend validates the request and calls Gemini using a workplace-coaching system instruction. Gemini returns structured JSON matching the `AnalysisResponse` contract.
+
+The backend validates the generated response with Pydantic before returning it to the frontend.
+
+`POST /api/feedback` validates and acknowledges optional prototype feedback. Feedback is **not persistently stored** in the current prototype.
+
+---
 
 ## Responsible AI
 
-Keep confidential information, unnecessary personal/customer data, passwords, and credentials out of prompts. AI supports work but does not make final hiring, firing, legal, medical, financial, or other consequential decisions. Every plan includes a human-review step. The app describes potential benefits without unsupported productivity statistics.
+Responsible AI is built into the coaching workflow rather than treated only as a disclaimer.
 
-## Prototype scope
+The prototype:
 
-Intentionally not included: authentication, persistent feedback, manager dashboards, analytics, databases, company integrations, or additional AI providers.
+- reminds employees to keep unnecessary sensitive information out of prompts;
+- discourages sharing passwords, credentials, and unnecessary personal or customer information;
+- keeps final human judgement for consequential decisions;
+- treats AI as support rather than the final decision-maker for hiring, firing, legal, medical, financial, and similar high-impact tasks;
+- includes explicit human-review guidance in the coaching plan; and
+- avoids unsupported claims about exact productivity improvements.
 
-## Local setup
+Employees remain responsible for verifying AI-generated guidance before using it in their work.
 
-Prerequisites: Node.js 18+ and Python 3.9+.
+---
 
-1. Copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY`.
-2. In one terminal:
+## Prototype Scope
 
-   ```powershell
-   cd backend
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload --port 8000
-   ```
+This prototype is intentionally small and focused.
 
-3. In another terminal:
+It currently includes the complete core workflow from a workplace task to a structured AI coaching plan.
 
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
+The following are intentionally outside the prototype scope:
 
-Open `http://localhost:5173`.
+- authentication and user accounts;
+- persistent feedback storage;
+- employee history;
+- manager or organization dashboards;
+- advanced adoption analytics;
+- company-specific integrations;
+- organization-specific knowledge retrieval; and
+- multiple AI model providers.
 
-## Environment variables
+These would be considered for a production version after validating the core workflow with users.
 
-| Variable | Where | Purpose |
+---
+
+## Tech Stack
+
+**Frontend**
+
+- React
+- Vite
+- React Router
+
+**Backend**
+
+- Python
+- FastAPI
+- Pydantic
+
+**AI**
+
+- Google Gemini API
+- Structured model output
+
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.9+
+- Gemini API key
+
+### 1. Configure the backend
+
+Copy:
+
+```text
+backend/.env.example
+```
+
+to:
+
+```text
+backend/.env
+```
+
+Then configure the required environment variables.
+
+Never commit the real `.env` file or API key.
+
+### 2. Start the backend
+
+```powershell
+cd backend
+
+python -m venv .venv
+
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+
+uvicorn app.main:app --reload --port 8000
+```
+
+### 3. Start the frontend
+
+Open another terminal:
+
+```powershell
+cd frontend
+
+npm install
+
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Environment Variables
+
+| Variable | Location | Purpose |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | backend only | Gemini API key; never commit it. |
-| `GEMINI_MODEL` | backend only | Model name; defaults to `gemini-3.6-flash`. |
-| `FRONTEND_ORIGIN` | backend | Deployed frontend origin, with no trailing slash. |
-| `ALLOWED_ORIGINS` | backend, optional | Comma-separated replacement for `FRONTEND_ORIGIN` when more than one deployed origin is needed. |
-| `VITE_API_BASE_URL` | frontend | Public backend base URL, e.g. `https://api.example.com`. Never use `VITE_*` for Gemini keys. |
+| `GEMINI_API_KEY` | Backend | Gemini API key. Never commit this value. |
+| `GEMINI_MODEL` | Backend | Gemini model used by the application. |
+| `FRONTEND_ORIGIN` | Backend | Deployed frontend origin, without a trailing slash. |
+| `ALLOWED_ORIGINS` | Backend (optional) | Comma-separated allowed origins when multiple deployed origins are required. |
+| `VITE_API_BASE_URL` | Frontend | Public URL of the deployed FastAPI backend. |
 
-## Deployment configuration
+> Never expose `GEMINI_API_KEY` through a `VITE_*` environment variable. Gemini requests are made only through the backend.
 
-Set the backend `GEMINI_API_KEY`, `GEMINI_MODEL`, and `FRONTEND_ORIGIN` in the hosting environment. Set `VITE_API_BASE_URL` in the frontend hosting environment to the deployed backend URL before building. The API retains local Vite origins for development and adds only valid configured HTTP(S) origins; it does not use wildcard CORS.
+---
 
-Because the frontend uses client-side routes, configure the frontend host to rewrite unknown routes to `index.html` so a direct visit to `/coach` works.
+## Deployment Configuration
 
-## Limitations / next steps
+For deployment, configure the backend with:
 
-This is a prototype. Before production use, add the organization’s approved privacy, retention, access-control, observability, and evaluation practices, and use an approved deployment environment.
+```text
+GEMINI_API_KEY
+GEMINI_MODEL
+FRONTEND_ORIGIN
+```
+
+Configure the frontend with:
+
+```text
+VITE_API_BASE_URL
+```
+
+`VITE_API_BASE_URL` should point to the deployed FastAPI backend.
+
+The API keeps the local Vite origins for development and allows configured production origins without using wildcard CORS.
+
+Because the frontend uses client-side routing, the frontend host should rewrite unknown routes to `index.html` so direct navigation to routes such as `/coach` continues to work.
+
+---
+
+## Limitations and Next Steps
+
+AI Work Coach is currently a focused prototype designed to validate the core idea.
+
+A production version could add:
+
+- organization authentication and role-based access;
+- persistent and privacy-appropriate feedback data;
+- company-approved AI tools and policies;
+- organization-specific knowledge;
+- team-level AI skill and adoption insights;
+- stronger monitoring and evaluation; and
+- enterprise privacy, retention, and governance controls.
+
+The next step would be to test the workflow with real employees and evaluate whether the coaching helps them apply AI training more effectively in their day-to-day work.
